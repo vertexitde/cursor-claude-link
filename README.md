@@ -23,7 +23,7 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Subscription usage | Settings card implemented; retrieval can be unavailable |
 | Fast and Ultracode | Not implemented |
 
-Cursor 3.20.21 passed syntax, anchor, SSH routing, context and effort forwarding, and native stream-adapter checks. Standalone Claude and combined ChatGPT/Claude installations were verified on a separate local copy. A fresh manual UI test is pending for this build. Earlier live attachment and tool-call checks are documented separately. See [testing notes](docs/testing.md) for the exact coverage.
+Cursor 3.20.21 passed syntax, anchor, SSH routing, context and effort forwarding, and native stream-adapter checks. Standalone Claude and combined ChatGPT/Claude installations were verified on a separate local copy. The project owner confirmed Explore model selection, effort forwarding and both tooltip layouts after reloading this build. Earlier live attachment and tool-call checks are documented separately. See [testing notes](docs/testing.md) for the exact coverage.
 
 Only the listed builds are supported. The installer checks version, commit, original JavaScript hashes and patch anchors. A matching local ChatGPT installation manifest can identify already patched files. Unknown changes stop installation.
 
