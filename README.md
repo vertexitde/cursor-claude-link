@@ -9,8 +9,8 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Item | Current status |
 | --- | --- |
 | Client platform | Windows x64 |
-| Latest tested Cursor | 3.20.21, September 14, 2026; automated checks |
-| Cursor commit | `f09fca384ceca23f7bf21f9c23655b162641d740` |
+| Latest tested Cursor | 3.20.23, September 15, 2026; automated checks |
+| Cursor commit | `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` |
 | Supported Cursor 3.20.11 | Commit `69d099d6568dc97e110ba8184614faf51c4040b0` |
 | Previous supported Cursor | 3.20.7, commit `979197d5570b168c034c634b3e21f2bea3ea5be0` |
 | Node.js used locally | 26.7.0 |
@@ -23,17 +23,17 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Subscription usage | Settings card implemented; retrieval can be unavailable |
 | Fast and Ultracode | Not implemented |
 
-Cursor 3.20.21 passed syntax, anchor, SSH routing, context and effort forwarding, and native stream-adapter checks. Standalone Claude and combined ChatGPT/Claude installations were verified on a separate local copy. The project owner confirmed Explore model selection, effort forwarding and both tooltip layouts after reloading this build. Earlier live attachment and tool-call checks are documented separately. See [testing notes](docs/testing.md) for the exact coverage.
+Cursor 3.20.23 passed syntax, anchor, SSH routing, context and effort forwarding, subagent lifecycle, queue and plan transition checks. Standalone Claude and combined ChatGPT/Claude installations were verified on a separate local copy. Support for 3.20.21, 3.20.17, 3.20.11 and 3.20.7 is retained. After installing both patches and starting Cursor 3.20.23, short live requests completed in the Agents Window with Claude Opus 5 High and GPT-6 Astra Medium (272K). Switching from Claude to ChatGPT in the same test conversation also worked. These prompts deliberately requested no tools or file changes. Fresh IDE, remote SSH, attachment and full subagent workflow checks remain pending for this build. Earlier live checks are documented separately. See [testing notes](docs/testing.md) for the exact coverage.
 
 Only the listed builds are supported. The installer checks version, commit, original JavaScript hashes and patch anchors. A matching local ChatGPT installation manifest can identify already patched files. Unknown changes stop installation.
 
-On Cursor 3.20.17 and 3.20.21, local subscription subagents also receive a missing parent Task entry before Cursor waits for its registration. The repair passed automated checks in both workbenches; a completed SSH subagent task still needs manual confirmation. See the testing notes for details.
+On Cursor 3.20.17, 3.20.21 and 3.20.23, local subscription subagents also receive a missing parent Task entry before Cursor waits for its registration. The repair passed automated checks in both workbenches; a completed SSH subagent task still needs manual confirmation. See the testing notes for details.
 
-On Cursor 3.20.21, **Explore Subagent Model** selections are forwarded to the local runtime with their model parameters. **Default**, **Inherit** and **Disabled** retain Cursor's native behavior. Model tooltips show the context window and selected effort in the same layout as Cursor's built-in models. Context selection and the legacy MAX switch now control the actual runtime window while preserving effort. See [Context and MAX mode](docs/model-modes.md). See the [testing notes](docs/testing.md) for coverage.
+On Cursor 3.20.21 and 3.20.23, **Explore Subagent Model** selections are forwarded to the local runtime with their model parameters. **Default**, **Inherit** and **Disabled** retain Cursor's native behavior. Model tooltips show the context window and selected effort in the same layout as Cursor's built-in models. Context selection and the legacy MAX switch now control the actual runtime window while preserving effort. See [Context and MAX mode](docs/model-modes.md). See the [testing notes](docs/testing.md) for coverage.
 
-On Cursor 3.20.21, stopping a subscription chat also cancels its active subagents. Local subagent stops do not wait for the agent-host service, and a cancelled parent cannot start a late child request. Reopening a subagent refreshes its transcript cache and loads the most recent missing messages. These changes passed automated checks; manual chat-switch and stop verification is still pending.
+On Cursor 3.20.21 and 3.20.23, stopping a subscription chat also cancels its active subagents. Local subagent stops do not wait for the agent-host service, and a cancelled parent cannot start a late child request. Reopening a subagent refreshes its transcript cache and loads the most recent missing messages. These changes passed automated checks; manual chat-switch and stop verification is still pending.
 
-On Cursor 3.20.21, queued follow-ups are forwarded to the local runtime. Starting Build also preserves human messages that have not reached the conversation checkpoint yet. Delivery is confirmed by native message events, and stopping the chat prevents queued work from starting another run. Automated queue and build checks passed; manual Plan-to-Build validation is pending.
+On Cursor 3.20.21 and 3.20.23, queued follow-ups are forwarded to the local runtime. Starting Build also preserves human messages that have not reached the conversation checkpoint yet. Delivery is confirmed by native message events, and stopping the chat prevents queued work from starting another run. Automated queue and build checks passed; manual Plan-to-Build validation is pending.
 
 
 ## What it adds

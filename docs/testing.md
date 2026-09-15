@@ -4,6 +4,7 @@
 
 | Version | Commit | Platform |
 | --- | --- | --- |
+| 3.20.23 | `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` | Windows x64 |
 | 3.20.21 | `f09fca384ceca23f7bf21f9c23655b162641d740` | Windows x64 |
 | 3.20.17 | `0c32194e3fb5ffaced9fb36430b860ec301e1fc0` | Windows x64 |
 | 3.20.11 | `69d099d6568dc97e110ba8184614faf51c4040b0` | Windows x64 |
@@ -12,6 +13,23 @@
 The build JSON files record SHA-256 hashes of original JavaScript bundles. Version-specific installers also require unique patch anchors and run Node.js syntax checks before writing application files. Existing GPT installations are accepted only through a matching local installation manifest.
 
 The public source check and unit tests do not require Cursor or Claude sign-in. They cover environment handling, model and context mapping, function-call preparation, usage parsing, picker sections and exact bridge-process matching. CI runs these on Windows with Node.js 22 and 24. Local verification used Node.js 26.7.0; CI results are separate evidence.
+
+## Cursor 3.20.23 update
+
+Reviewed on September 15, 2026 against commit `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50`. Both workbenches changed their minified identifiers. The picker, subscription usage components, dedicated-runtime activation, Task parameters and subagent service bindings were checked against the new source. The two agent runtime bundles only changed their privacy schema and build metadata; existing runtime patch anchors remain valid.
+
+The following controlled checks passed:
+
+- All 63 ChatGPT and 65 Claude unit tests, plus source checks.
+- Exact original hashes, unique anchors and JavaScript syntax for all generated bundles.
+- Native SSH routing, Task registration, Explore model selection, inheritance and restrictions.
+- Immediate local stop, parent cancellation, transcript refresh, queued delivery and Plan-to-Build message forwarding.
+- Context and MAX switching with effort preserved; ChatGPT Fast forwarding and Claude context forwarding.
+- Subscription settings rendering against the actual native hooks and card components, and ChatGPT login command registration in both workbenches.
+- Standalone and combined installations, linked manifest hashes and exact restoration of every original file.
+- ChatGPT native build checks against 3.20.21 to check backward compatibility.
+
+These checks execute extracted native functions with controlled dependencies. They do not prove a complete live SSH session or every UI interaction. After installing both patches and starting Cursor 3.20.23, short live requests completed in the Agents Window with Claude Opus 5 High and GPT-6 Astra Medium (272K). Switching from Claude to ChatGPT in the same test conversation also worked. These prompts deliberately requested no tools or file changes. Fresh IDE, remote SSH, attachment and full subagent workflow checks remain pending for this build. Both installed manifests and backup hashes were verified. Native Responses-adapter error and tool-call checks also passed against both installed runtime bundles. Original build hashes are recorded in [the build metadata](../build-3.20.23.json).
 
 ## Cursor 3.20.21 update
 
