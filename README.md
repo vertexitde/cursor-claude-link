@@ -9,8 +9,9 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Item | Current status |
 | --- | --- |
 | Client platform | Windows x64 |
-| Latest tested Cursor | 3.20.23, September 15, 2026; automated checks |
-| Cursor commit | `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` |
+| Latest tested Cursor | 3.21.1, September 16, 2026; automated checks |
+| Cursor commit | `74f717017ddcbf0554cd8c91ec7e2fb56983a070` |
+| Previously supported Cursor | 3.20.23, commit `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` |
 | Supported Cursor 3.20.11 | Commit `69d099d6568dc97e110ba8184614faf51c4040b0` |
 | Previous supported Cursor | 3.20.7, commit `979197d5570b168c034c634b3e21f2bea3ea5be0` |
 | Node.js used locally | 26.7.0 |
@@ -22,6 +23,8 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Remote SSH | Local inference routing implemented; dedicated Claude SSH testing is still pending |
 | Subscription usage | Settings card implemented; retrieval can be unavailable |
 | Fast and Ultracode | Not implemented |
+
+Cursor 3.21.1 renamed the obfuscated workbench symbols and rotated the minified locals in both extension runtime bundles, so the anchors were re-derived for this build and the version-independent ones were widened to read their symbols out of the match. The automated checks pass on 3.21.1 for both workbench bundles and both runtime bundles, including the native model resolver, Explore settings, context budget, reasoning forwarding, subagent lifecycle, subagent registration, action manager and subscription settings checks. Both patches were installed together on a local 3.21.1, Cursor started with no workbench errors and both bridges served their model catalogs. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
 Cursor 3.20.23 passed syntax, anchor, SSH routing, context and effort forwarding, subagent lifecycle, queue and plan transition checks. Standalone Claude and combined ChatGPT/Claude installations were verified on a separate local copy. Support for 3.20.21, 3.20.17, 3.20.11 and 3.20.7 is retained. After installing both patches and starting Cursor 3.20.23, short live requests completed in the Agents Window with Claude Opus 5 High and GPT-6 Astra Medium (272K). Switching from Claude to ChatGPT in the same test conversation also worked. These prompts deliberately requested no tools or file changes. Fresh IDE, remote SSH, attachment and full subagent workflow checks remain pending for this build. Earlier live checks are documented separately. See [testing notes](docs/testing.md) for the exact coverage.
 
