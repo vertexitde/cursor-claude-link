@@ -9,9 +9,9 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Item | Current status |
 | --- | --- |
 | Client platform | Windows x64 |
-| Latest tested Cursor | 3.21.1, September 16, 2026; automated checks |
-| Cursor commit | `74f717017ddcbf0554cd8c91ec7e2fb56983a070` |
-| Previously supported Cursor | 3.20.23, commit `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` |
+| Latest tested Cursor | 3.21.9, September 17, 2026; automated checks |
+| Cursor commit | `9998796a6096ce83d83a9332bfe7473b985db750` |
+| Previously supported Cursor | 3.21.1, commit `74f717017ddcbf0554cd8c91ec7e2fb56983a070`; 3.20.23, commit `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` |
 | Supported Cursor 3.20.11 | Commit `69d099d6568dc97e110ba8184614faf51c4040b0` |
 | Previous supported Cursor | 3.20.7, commit `979197d5570b168c034c634b3e21f2bea3ea5be0` |
 | Node.js used locally | 26.7.0 |
@@ -23,6 +23,8 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Remote SSH | Local inference routing implemented; dedicated Claude SSH testing is still pending |
 | Subscription usage | Settings card implemented; retrieval can be unavailable |
 | Fast and Ultracode | Not implemented |
+
+Cursor 3.21.9 renamed the obfuscated workbench symbols again but left the code structure unchanged. Every workbench symbol was re-derived and checked against the known 3.21.1 values first; the runtime anchors that now read their symbols out of the match needed no change. The automated checks pass on 3.21.9 for both workbench bundles and both runtime bundles, and both patches were installed together on a local 3.21.9. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
 Cursor 3.21.1 renamed the obfuscated workbench symbols and rotated the minified locals in both extension runtime bundles, so the anchors were re-derived for this build and the version-independent ones were widened to read their symbols out of the match. The automated checks pass on 3.21.1 for both workbench bundles and both runtime bundles, including the native model resolver, Explore settings, context budget, reasoning forwarding, subagent lifecycle, subagent registration, action manager and subscription settings checks. Both patches were installed together on a local 3.21.1, Cursor started with no workbench errors and both bridges served their model catalogs. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 

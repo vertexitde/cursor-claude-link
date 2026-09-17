@@ -4,6 +4,7 @@
 
 | Version | Commit | Platform |
 | --- | --- | --- |
+| 3.21.9 | `9998796a6096ce83d83a9332bfe7473b985db750` | Windows x64 |
 | 3.21.1 | `74f717017ddcbf0554cd8c91ec7e2fb56983a070` | Windows x64 |
 | 3.20.23 | `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` | Windows x64 |
 | 3.20.21 | `f09fca384ceca23f7bf21f9c23655b162641d740` | Windows x64 |
@@ -14,6 +15,12 @@
 The build JSON files record SHA-256 hashes of original JavaScript bundles. Version-specific installers also require unique patch anchors and run Node.js syntax checks before writing application files. Existing GPT installations are accepted only through a matching local installation manifest.
 
 The public source check and unit tests do not require Cursor or Claude sign-in. They cover environment handling, model and context mapping, function-call preparation, usage parsing, picker sections and exact bridge-process matching. CI runs these on Windows with Node.js 22 and 24. Local verification used Node.js 26.7.0; CI results are separate evidence.
+
+## Cursor 3.21.9 update
+
+Reviewed on September 17, 2026 against commit `9998796a6096ce83d83a9332bfe7473b985db750`. Both workbenches renamed their minified identifiers; the anchored code is structurally unchanged. The workbench symbols were derived with a script that locates each one by the role it plays (picker sections, default model mapping, local run gate, dedicated runtime host, activation, Plan & Usage card and hooks, login action registration, Task bubble types and subagent service). Run against the pristine 3.21.1 bundles, the script reproduced every symbol reviewed for that build before it was trusted with 3.21.9. The runtime bundle anchors, which read their symbols from the match since 3.21.1, needed no change.
+
+The automated checks pass on 3.21.9 for both workbench bundles and both runtime bundles, with the same coverage as 3.21.1. Both patches were installed together on a local 3.21.9, ChatGPT first and Claude second. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
 ## Cursor 3.21.1 update
 
