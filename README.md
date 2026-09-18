@@ -9,9 +9,9 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Item | Current status |
 | --- | --- |
 | Client platform | Windows x64 |
-| Latest tested Cursor | 3.21.9, September 17, 2026; automated checks |
-| Cursor commit | `9998796a6096ce83d83a9332bfe7473b985db750` |
-| Previously supported Cursor | 3.21.1, commit `74f717017ddcbf0554cd8c91ec7e2fb56983a070`; 3.20.23, commit `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` |
+| Latest tested Cursor | 3.21.12, September 18, 2026; automated checks |
+| Cursor commit | `05ddb9e824590e2c1db6bd2548dd71bf67ac9d20` |
+| Previously supported Cursor | 3.21.9, commit `9998796a6096ce83d83a9332bfe7473b985db750`; 3.21.1, commit `74f717017ddcbf0554cd8c91ec7e2fb56983a070`; 3.20.23, commit `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` |
 | Supported Cursor 3.20.11 | Commit `69d099d6568dc97e110ba8184614faf51c4040b0` |
 | Previous supported Cursor | 3.20.7, commit `979197d5570b168c034c634b3e21f2bea3ea5be0` |
 | Node.js used locally | 26.7.0 |
@@ -23,6 +23,8 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Remote SSH | Local inference routing implemented; dedicated Claude SSH testing is still pending |
 | Subscription usage | Settings card implemented; retrieval can be unavailable |
 | Fast and Ultracode | Not implemented |
+
+Cursor 3.21.12 renamed the obfuscated workbench symbols again; the code the patches anchor to is unchanged. The symbols were re-derived by role and the extractor was validated against the reviewed 3.21.9 values before it was trusted with this build. Names are recycled between builds, so replacements are made on whole anchors rather than symbol by symbol: in the editor bundle the identifier that meant useState in 3.21.9 means useEffect in 3.21.12. The runtime bundle anchors needed no change. All automated checks pass, and the three patches were installed together on a local 3.21.12. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
 Cursor 3.21.9 renamed the obfuscated workbench symbols again but left the code structure unchanged. Every workbench symbol was re-derived and checked against the known 3.21.1 values first; the runtime anchors that now read their symbols out of the match needed no change. The automated checks pass on 3.21.9 for both workbench bundles and both runtime bundles, and both patches were installed together on a local 3.21.9. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
