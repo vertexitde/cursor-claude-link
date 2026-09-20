@@ -4,6 +4,7 @@
 
 | Version | Commit | Platform |
 | --- | --- | --- |
+| 3.21.16 | `8ae78e8eee1e63479c7e0504b664bc0a80c68000` | Windows x64 |
 | 3.21.13 | `e44a49c17e334d442e58bbde931d791200f014a0` | Windows x64 |
 | 3.21.12 | `05ddb9e824590e2c1db6bd2548dd71bf67ac9d20` | Windows x64 |
 | 3.21.9 | `9998796a6096ce83d83a9332bfe7473b985db750` | Windows x64 |
@@ -17,6 +18,10 @@
 The build JSON files record SHA-256 hashes of original JavaScript bundles. Version-specific installers also require unique patch anchors and run Node.js syntax checks before writing application files. Existing GPT installations are accepted only through a matching local installation manifest.
 
 The public source check and unit tests do not require Cursor or Claude sign-in. They cover environment handling, model and context mapping, function-call preparation, usage parsing, picker sections and exact bridge-process matching. CI runs these on Windows with Node.js 22 and 24. Local verification used Node.js 26.7.0; CI results are separate evidence.
+
+## Cursor 3.21.16 update
+
+Cursor 3.21.16 renamed the obfuscated workbench symbols again, and again left the anchored code and both runtime bundles untouched. Half the workbench symbols changed on each surface. The extractor was rebuilt for this port and first had to reproduce every reviewed 3.21.13 value before it was used here. Recycled names showed up once more: the editor identifier that pointed at the Google dashboard link in 3.21.13 is the settings card's useEffect alias in 3.21.16, so replacements are made on whole anchors rather than symbol by symbol. All automated checks pass and the three patches were installed together on a local 3.21.16. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
 ## Cursor 3.21.13 update
 
