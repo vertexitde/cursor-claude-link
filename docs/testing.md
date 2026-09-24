@@ -4,6 +4,7 @@
 
 | Version | Commit | Platform |
 | --- | --- | --- |
+| 3.22.5 | `a00aa8754ab5bae70b637d98e126f9dbd4e1e5d0` | Windows x64 |
 | 3.21.18 | `c4730f7d93d787d9ab120af715999f0345ee5bc0` | Windows x64 |
 | 3.21.16 | `8ae78e8eee1e63479c7e0504b664bc0a80c68000` | Windows x64 |
 | 3.21.13 | `e44a49c17e334d442e58bbde931d791200f014a0` | Windows x64 |
@@ -19,6 +20,10 @@
 The build JSON files record SHA-256 hashes of original JavaScript bundles. Version-specific installers also require unique patch anchors and run Node.js syntax checks before writing application files. Existing GPT installations are accepted only through a matching local installation manifest.
 
 The public source check and unit tests do not require Cursor or Claude sign-in. They cover environment handling, model and context mapping, function-call preparation, usage parsing, picker sections and exact bridge-process matching. CI runs these on Windows with Node.js 22 and 24. Local verification used Node.js 26.7.0; CI results are separate evidence.
+
+## Cursor 3.22.5 update
+
+Cursor 3.22.5 is the first minor release these patches have been carried across, and it renamed more than four fifths of the derived symbols: 42 of 50 in the editor and 41 of 50 in the Agents Window. Two things changed beyond the names. The default model map renamed both its prefix binding and its mapper, which every build since 3.20 had left alone. And `subscribeHeaders` was rewritten: the disposed-store check is now an early return instead of a ternary, and the reactive read the old anchor matched on is gone. The shared subagent lifecycle module now recognises both shapes and hydrates the transcript after the new guard, so the older supported builds keep their original treatment. Everything else, including both runtime bundles, needed no change. All automated checks pass and the three patches were installed together on a local 3.22.5. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
 ## Cursor 3.21.18 update
 
