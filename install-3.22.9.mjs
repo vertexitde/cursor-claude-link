@@ -18,12 +18,23 @@ import {findClaude} from './cli-path.mjs';
 import {usageSectionSrc} from './usage-section.mjs';
 import {pickerSectionHelpersSrc, patchPickerSections} from './picker-sections.mjs';
 import {buildAutostart} from './autostart.mjs';
+import {applyToDisk} from './ssh-forwarding.mjs';
 
 const dir=path.dirname(fileURLToPath(import.meta.url));
 const root=cursorRoot();
 const manifestPath=path.join(dir,'installed.json');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
 const linkedManifests=linkedGptManifests();
+// From 3.22.9 a remote session runs the agent on the SSH host, so the bridge is
+// published on that host's loopback through an ssh reverse forward.
+const owner='cursor-claude-link';
+const sshHosts=(process.argv.find(a=>a.startsWith('--ssh-hosts='))??'').slice('--ssh-hosts='.length).split(',').map(h=>h.trim()).filter(Boolean);
+const skipSsh=process.argv.includes('--no-ssh');
+function reportSsh(result){
+  if(!result.changed){console.log('ssh forwarding: '+(result.reason??'unchanged'));return;}
+  console.log('ssh forwarding: '+result.configPath+(result.hosts.length?' -> '+result.hosts.join(', '):' (entries removed)'));
+  if(result.unknown?.length)console.log('ssh forwarding: not declared in the file, added anyway: '+result.unknown.join(', '));
+}
 if(process.argv.includes('--restore')){
   const manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8'));
   for(const f of manifest.files){if(hash(fs.readFileSync(f.path))!==f.patchedHash||hash(fs.readFileSync(f.backup))!==f.originalHash)throw new Error('Files changed. Restore stopped: '+f.path);}
@@ -34,6 +45,7 @@ if(process.argv.includes('--restore')){
     fs.writeFileSync(linked.path,JSON.stringify(current,null,2));
   }
   fs.renameSync(manifestPath,manifestPath+'.restored-'+Date.now());
+  if(!skipSsh)reportSsh(applyToDisk({owner,remove:true}));
   console.log('Claude patch removed. Reload Cursor.');process.exit();
 }
 if(fs.existsSync(manifestPath))throw new Error('Claude patch already installed. Restore before reinstalling.');
@@ -91,10 +103,10 @@ for(const surface of ['desktop','glass']){
     source=once(source,before,after);
     source=once(source,'localMode:'+local+'.localMode});if('+local+'.localMode){','localMode:'+local+'.localMode||__claudeLocal});if('+local+'.localMode||__claudeLocal){');
   }
-  const native=desktop?'qh(this.storageService,"useDedicatedLocalAgentRuntimeHost")':'Hp(this.storageService,"useDedicatedLocalAgentRuntimeHost")';
-  source=once(source,native,'(__isClaudeBridgeModel('+(desktop?'g':'p')+')&&Boolean(this.environmentService.remoteAuthority)||'+native+')');
-  const activation=desktop?'function xwp(e){return Rc.localMode&&e?.get(t0y,-1)==="true"}':'function MWg(t){return vl.localMode&&t?.get(jWg,-1)==="true"}';
-  if(source.includes(activation))source=once(source,activation,activation.replace('return ','return typeof __claudeBridgeBase==="string"||'));
+  // Remote sessions keep Cursor's own routing: the agent runs on the SSH host,
+  // where the workspace actually lives, and reaches the bridge through the ssh
+  // reverse forward. The dedicated UI runtime resolved remote paths with the
+  // client's path module and looked for "/srv/app" under "C:\srv\app".
   const usage=desktop
     ?{jsx:'v7y',useState:'Jhr',useEffect:'E8y',card:'Sv',zs:'ks',bar:'yR',barStyle:'opr',
       fn:'function k7y(e){const t=pxp(119)',
@@ -152,4 +164,5 @@ try{
   for(const file of pending)fs.writeFileSync(file.path,file.content);
   for(const linked of manifest.linked){const value=JSON.parse(linked.original);for(const f of value.files){const changed=manifest.files.find(x=>x.path===f.path);if(changed)f.patchedHash=changed.patchedHash;}fs.writeFileSync(linked.path,JSON.stringify(value,null,2));}
 }catch(error){for(const f of manifest.files)fs.copyFileSync(f.backup,f.path);for(const f of manifest.linked)fs.writeFileSync(f.path,f.original);fs.renameSync(manifestPath,manifestPath+'.rolled-back');throw error;}
+if(!skipSsh)reportSsh(applyToDisk({owner,port:config.port,hosts:sshHosts}));
 console.log('Claude subscription models installed. Reload Cursor to activate.');

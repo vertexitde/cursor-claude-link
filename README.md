@@ -20,9 +20,11 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Bridge tool calls | Sonnet and Fable round trips verified before the Cursor update |
 | Context and effort | Forwarding checked in both runtime bundles; short requests tested with 200K and 1M |
 | IDE and Agents Window | Both bundles patched and syntax checked; separate manual coverage is not recorded |
-| Remote SSH | Local inference routing implemented; dedicated Claude SSH testing is still pending |
+| Remote SSH | From 3.22.9 the agent runs on the host and reaches the bridge through an ssh reverse forward the installer writes; automated checks pass, live remote use is unconfirmed |
 | Subscription usage | Settings card implemented; retrieval can be unavailable |
 | Fast and Ultracode | Not implemented |
+
+Remote SSH sessions changed with 3.22.9. Until then a remote session kept the agent in Cursor's dedicated UI runtime so that the bridge, which listens on the client's loopback, stayed reachable. That runtime resolves paths with the client's own path module: on a Windows client against a Linux host, the workspace path `/srv/app` became `C:\\srv\\app`, and the runtime then looked there for `.cursor/rules`, ran `git rev-parse` in it, walked its ignore files up to the drive root and built the sandbox policy from it. From 3.22.9 the agent runs on the SSH host, where the workspace actually is, and the bridge is published on that host's loopback with an ssh reverse forward that `cursor-claude-link` writes into `~/.ssh/config`. See [Remote sessions](#remote-sessions).
 
 Cursor 3.22.9 renamed symbols again and changed nothing else: 16 of 50 in the editor, 31 of 50 in the Agents Window. The anchors the minor release had moved a build earlier, the model map and `subscribeHeaders`, stayed as 3.22.5 left them, and both runtime bundles are unchanged. The extractor reproduced every reviewed 3.22.5 value before it was used here. All automated checks pass and the three patches were installed together on a local 3.22.9. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
@@ -128,11 +130,22 @@ For a normal project update, close Cursor, restore the patch, run `git pull`, th
 
 Cursor updates can replace the patched files. **Do not restore old backups over a newer Cursor build.** Check the supported version table and follow [the update notes](docs/testing.md#cursor-updates). There is no force option.
 
-## Remote SSH
+## Remote sessions
 
-Inference runs on the local PC through Cursor's dedicated local runtime. Cursor's existing workspace path handles tools on the SSH host. The remote machine should not need Claude Code, copied credentials or a forwarded bridge port.
+In a Remote-SSH window the agent runs on the host, so the host has to reach the bridge. The installer adds a reverse forward to `~/.ssh/config`, inside a marked block it owns:
 
-This routing is implemented in both workbenches. Claude-specific end-to-end SSH validation is still pending; the successful SSH tests in cursor-gpt-link do not establish Claude coverage.
+```
+# >>> cursor subscription links: bridge forwarding >>>
+Host your-server
+    RemoteForward 127.0.0.1:43188 127.0.0.1:43188
+# <<< cursor subscription links: bridge forwarding <<<
+```
+
+The hosts are the ones you have opened in Cursor that are also declared in your `~/.ssh/config`; nothing else is touched, so ssh to anything outside that list, `git push` included, is unaffected. All three links share the block, each owning the line for its own port, and `npm run restore` removes only its own. A copy of the file as it was before the first change is kept as `config.before-cursor-links`. Use `--ssh-hosts=a,b` to choose the hosts yourself, or `--no-ssh` to leave the file alone.
+
+Two things to know. A second ssh session to the same host cannot bind the port again and ssh prints `remote port forwarding failed`; the session still works, and the first one keeps serving the bridge. And the bridge becomes reachable on that host's loopback, so only forward to hosts you trust with it. The bridge still requires its per-installation key.
+
+The remote machine needs no Claude Code installation and no copied credentials: the bridge stays on your PC and the host only talks to it through the forward. The agent there uses the server's own runtime under `~/.cursor-server`, which this patch does not touch, so reasoning effort forwarding and the subagent model repairs are not present on the host yet. End-to-end SSH validation with Claude is still pending.
 
 ## How it works
 
