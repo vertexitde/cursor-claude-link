@@ -3,6 +3,7 @@ import {patchSubagentLifecycle} from './subagent-lifecycle.mjs';
 import {patchMaxMode} from './max-mode.mjs';
 import {patchSubagentSettingsWorkbench, patchSubagentSettingsRuntime} from './subagent-settings.mjs';
 import {patchSubagentModel} from './subagent-model.mjs';
+import {patchRuntime} from './patches-runtime.mjs';
 import {patchSubagentBubbles} from './subagent-bubbles.mjs';
 import {cursorRoot,linkedGptManifests,requireSupportedOriginals} from './build-support.mjs';
 import fs from 'node:fs';
@@ -18,7 +19,9 @@ import {findClaude} from './cli-path.mjs';
 import {usageSectionSrc} from './usage-section.mjs';
 import {pickerSectionHelpersSrc, patchPickerSections} from './picker-sections.mjs';
 import {buildAutostart} from './autostart.mjs';
-import {applyToDisk} from './ssh-forwarding.mjs';
+import {applyToDisk, readBlock, sshConfigPath} from './ssh-forwarding.mjs';
+import {syncKnownHosts} from './remote-runtime.mjs';
+import {link as remoteLink, marker as remoteMarker, prefix as remotePrefix, patchRuntime as remotePatchRuntime} from './runtime-link.mjs';
 
 const dir=path.dirname(fileURLToPath(import.meta.url));
 const root=cursorRoot();
@@ -126,19 +129,8 @@ for(const surface of ['desktop','glass']){
   pending.push({path:target,content:source});
 }
 for(const name of ['cursor-agent-exec','cursor-local-agent-runtime']){
-  const target=path.join(root,'extensions',name,'dist/main.js');let source=fs.readFileSync(target,'utf8');
-  // Cursor 3.21.1 rotated the minified locals and the two runtime bundles no
-  // longer agree on them, so read the parameter list variable off the anchor.
-  const anchor=source.match(/\}\(([\w$]+)\);if\(typeof t==="string"&&t\.startsWith\("chatgpt-codex\/"\)\)/)
-    ??source.match(/\}\(([\w$]+)\);if\(void 0===a\)return;if\(void 0!==i&&"openai_compatible"===[\w$]+\)/);
-  if(!anchor)throw new Error('Reasoning effort anchor missing.');
-  const params=anchor[1];
-  source=once(source,anchor[0],'}('+params+');if(typeof t==="string"&&t.startsWith("claude-subscription/")){const selected='+params+'?.find(p=>p.id==="reasoning")?.value;if(selected!==undefined)e.reasoning={...e.reasoning,effort:selected};const context='+params+'?.find(p=>p.id==="context")?.value;if(context!==undefined)e.claude_context=Number(context);delete e.reasoning_effort;delete e.service_tier;return}'+anchor[0].slice(('}('+params+');').length));
-  const api=source.match(/([\w$]+)\.includes\("codex"\)(\|\|\1\.startsWith\("claude-subscription\/"\))?\?"responses":"chat_completions"/);
-  if(!api)throw new Error('Local API type heuristic missing.');
-  if(!api[2])source=once(source,api[0],api[1]+'.includes("codex")||'+api[1]+'.startsWith("claude-subscription/")?"responses":"chat_completions"');
-  source=patchConversationActionsRuntime(patchSubagentSettingsRuntime(patchSubagentModel(source)),'claude-subscription/');
-  pending.push({path:target,content:source});
+  const target=path.join(root,'extensions',name,'dist/main.js');
+  pending.push({path:target,content:patchRuntime(fs.readFileSync(target,'utf8'))});
 }
 const main=path.join(root,'out/main.js');
 pending.push({path:main,content:fs.readFileSync(main,'utf8')+buildAutostart({nodePath:process.execPath,bridgePath:path.join(dir,'bridge.mjs'),port:config.port})});
@@ -165,4 +157,12 @@ try{
   for(const linked of manifest.linked){const value=JSON.parse(linked.original);for(const f of value.files){const changed=manifest.files.find(x=>x.path===f.path);if(changed)f.patchedHash=changed.patchedHash;}fs.writeFileSync(linked.path,JSON.stringify(value,null,2));}
 }catch(error){for(const f of manifest.files)fs.copyFileSync(f.backup,f.path);for(const f of manifest.linked)fs.writeFileSync(f.path,f.original);fs.renameSync(manifestPath,manifestPath+'.rolled-back');throw error;}
 if(!skipSsh)reportSsh(applyToDisk({owner,port:config.port,hosts:sshHosts}));
+// Hosts that already carry the runtime patch are brought to this build too; a
+// host that was never patched is left alone.
+if(!process.argv.includes('--no-remote')){
+  try{
+    const hosts=readBlock(fs.readFileSync(sshConfigPath(),'utf8')).hosts;
+    if(hosts.length)syncKnownHosts({hosts,link:remoteLink,marker:remoteMarker,prefix:remotePrefix,patchRuntime:remotePatchRuntime});
+  }catch(error){console.log('remote runtime: skipped, '+error.message);}
+}
 console.log('Claude subscription models installed. Reload Cursor to activate.');

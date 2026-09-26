@@ -22,6 +22,14 @@ The build JSON files record SHA-256 hashes of original JavaScript bundles. Versi
 
 The public source check and unit tests do not require Cursor or Claude sign-in. They cover environment handling, model and context mapping, function-call preparation, usage parsing, picker sections and exact bridge-process matching. CI runs these on Windows with Node.js 22 and 24. Local verification used Node.js 26.7.0; CI results are separate evidence.
 
+## Remote runtime patch
+
+The four runtime-side repairs run wherever the agent runs, so a remote session needs them on the host. `scripts/install-remote.mjs` reads the two extension bundles from `~/.cursor-server/bin/<platform>/<commit>` over ssh, applies the same patch functions the local installer uses, checks the result with `node --check` on the client and writes it back by rename. Each file keeps its untouched copy as `main.js.cursor-links-original`, and one shared manifest records the pristine and patched hashes plus which links are installed.
+
+Verified on a live host on September 26, 2026: all three links installed in order on the same build as the client, the shared registry in the host's bundle listing `chatgpt-codex/`, `claude-subscription/` and `inception-mercury/`, and both originals preserved. What sent us looking was a real failure on that host: a `task_v2` call with no `model` was rejected by the unpatched runtime with *Invalid model selection ""*, while the retry that named a model explicitly succeeded.
+
+Not yet confirmed: a remote turn against the patched host.
+
 ## Remote sessions, changed in 3.22.9
 
 The patch used to force a remote session into Cursor's dedicated UI runtime so that the bridge on the client's loopback stayed reachable. That runtime has no notion of a remote workspace: `isRemote`, `remotePlatform`, `pathStyle` and `remoteAuthority` do not appear in its bundle at all, and it resolves paths with the client's own path module. The renderer hands it the workspace path in the host's own form (`BP(uri, true, isRemote)` turns the separators back into slashes), so a Windows client against a Linux host produced:
