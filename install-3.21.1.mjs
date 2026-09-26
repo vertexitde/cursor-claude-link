@@ -62,7 +62,7 @@ for(const surface of ['desktop','glass']){
   const desktop=surface==='desktop';
   const target=path.join(root,'out/vs/workbench/workbench.'+surface+'.main.js');
   let source=fs.readFileSync(target,'utf8');
-  if(source.includes('__claudeBridgeBase'))throw new Error('Claude patch marker already present.');
+  if(source.includes('const __claudeBridgeBase='))throw new Error('Claude patch marker already present.');
   source=prelude+source;
   source=patchPickerSections(source,once,desktop
     ?{groupReturn:'return c.mergeLeadingIntoPromotedSection===!0?{leading:[],promoted:[...re,...ee],others:ce}:{leading:re,promoted:ee,others:ce}',

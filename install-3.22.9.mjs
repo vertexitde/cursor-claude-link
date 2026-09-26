@@ -18,6 +18,7 @@ import {discoverModels} from './catalog.mjs';
 import {findClaude} from './cli-path.mjs';
 import {usageSectionSrc} from './usage-section.mjs';
 import {pickerSectionHelpersSrc, patchPickerSections} from './picker-sections.mjs';
+import {usageLabelHelpersSrc} from './usage-label.mjs';
 import {buildAutostart} from './autostart.mjs';
 import {applyToDisk, readBlock, sshConfigPath} from './ssh-forwarding.mjs';
 import {syncKnownHosts} from './remote-runtime.mjs';
@@ -71,13 +72,16 @@ function __isClaudeBridgeModel(m){return typeof m==="string"&&m.startsWith("clau
 function __withClaudeBridgeModels(models){return [...__claudeBridgeModels,...models.filter(m=>!__isClaudeBridgeModel(m.name))]}
 async function __refreshClaudeBridgeModels(){try{const r=await fetch(__claudeBridgeBase+"/picker-models",{headers:{Authorization:"Bearer "+__claudeBridgeKey},signal:AbortSignal.timeout(25000)});if(!r.ok)return;const v=await r.json();if(Array.isArray(v.models)&&v.models.length)__claudeBridgeModels=v.models}catch{}}
 ${pickerSectionHelpersSrc}
+${usageLabelHelpersSrc}
 `;
 const pending=[];
 for(const surface of ['desktop','glass']){
   const desktop=surface==='desktop';
   const target=path.join(root,'out/vs/workbench/workbench.'+surface+'.main.js');
   let source=fs.readFileSync(target,'utf8');
-  if(source.includes('__claudeBridgeBase'))throw new Error('Claude patch marker already present.');
+  // The declaration, not the name: a companion's picker section mentions this
+  // constant defensively when it renders the usage label.
+  if(source.includes('const __claudeBridgeBase='))throw new Error('Claude patch marker already present.');
   source=prelude+source;
   source=patchPickerSections(source,once,desktop
     ?{groupReturn:'return c.mergeLeadingIntoPromotedSection===!0?{leading:[],promoted:[...se,...ee],others:ae}:{leading:se,promoted:ee,others:ae}',

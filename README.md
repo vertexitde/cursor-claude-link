@@ -59,6 +59,8 @@ On Cursor 3.20.21 and 3.20.23, queued follow-ups are forwarded to the local runt
 
 Models appear with a small Claude logo in a **Claude Subscription** section. ChatGPT subscription models and native Cursor models keep their own sections.
 
+Each subscription section carries the same usage label Cursor puts on its own, through the section component’s `titleTrailing` prop. The label shows the window that is closest to its limit, so it is the short rolling one most of the time and becomes the weekly one exactly when the week is the tighter constraint; hovering names every window. The bridge is asked at most once a minute while the picker renders, and a bridge that cannot answer leaves the section as it was.
+
 The model list comes from the installed Claude Code client. In the tested account it included Opus 5, Fable 5.1, Sonnet 5 and Haiku 4.5. The patch does not grant model access. Different Claude Code installations or accounts can return different catalogs.
 
 Each model appears once. The redundant Default entry is folded into the model it resolves to. **Context** offers 200K and 1M where supported, independently of **Effort**. Standard mode holds Claude Code to 200K; extended mode enables the larger window. Haiku keeps its standard window. This is why the menu does not copy Cursor's native 300K label.
