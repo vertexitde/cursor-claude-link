@@ -4,6 +4,7 @@
 
 | Version | Commit | Platform |
 | --- | --- | --- |
+| 3.22.9 | `2ca0f45baa06796a86f6c6ba2b9bedacaf94c370` | Windows x64 |
 | 3.22.5 | `a00aa8754ab5bae70b637d98e126f9dbd4e1e5d0` | Windows x64 |
 | 3.21.18 | `c4730f7d93d787d9ab120af715999f0345ee5bc0` | Windows x64 |
 | 3.21.16 | `8ae78e8eee1e63479c7e0504b664bc0a80c68000` | Windows x64 |
@@ -20,6 +21,10 @@
 The build JSON files record SHA-256 hashes of original JavaScript bundles. Version-specific installers also require unique patch anchors and run Node.js syntax checks before writing application files. Existing GPT installations are accepted only through a matching local installation manifest.
 
 The public source check and unit tests do not require Cursor or Claude sign-in. They cover environment handling, model and context mapping, function-call preparation, usage parsing, picker sections and exact bridge-process matching. CI runs these on Windows with Node.js 22 and 24. Local verification used Node.js 26.7.0; CI results are separate evidence.
+
+## Cursor 3.22.9 update
+
+Cursor 3.22.9 renamed symbols again and changed nothing else: 16 of 50 in the editor, 31 of 50 in the Agents Window. The anchors the minor release had moved a build earlier, the model map and `subscribeHeaders`, stayed as 3.22.5 left them, and both runtime bundles are unchanged. The extractor reproduced every reviewed 3.22.5 value before it was used here. All automated checks pass and the three patches were installed together on a local 3.22.9. Live model selection, tool calls, file edits, remote SSH and attachment workflows have not been confirmed on this build.
 
 ## Cursor 3.22.5 update
 
