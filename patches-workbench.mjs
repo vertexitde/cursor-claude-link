@@ -57,7 +57,7 @@ export function patchClaudeWorkbench(source, surface, s, {once, prelude}) {
     source = once(source, s.runAnchor, s.runAnchor
       .replace('{const ', '{const __claudeLocal=__isClaudeBridgeModel(' + model + ');const ')
       .replace(`localMode:${s.localMode}.localMode})`, `localMode:${s.localMode}.localMode||__claudeLocal})`)
-      .replace(`if(${s.localMode}.localMode){`, `if(${s.localMode}.localMode||__claudeLocal){`));
+      .replace(`${s.localMode}.localMode){`, `${s.localMode}.localMode||__claudeLocal){`));
   }
   // Remote sessions keep Cursor's own routing: the agent runs on the SSH host,
   // where the workspace actually lives, and reaches the bridge through the ssh
