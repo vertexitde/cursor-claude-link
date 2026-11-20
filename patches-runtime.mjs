@@ -18,7 +18,8 @@ function once(source, before, after) {
 export function patchRuntime(source) {
   // Cursor 3.21.1 rotated the minified locals and the two runtime bundles no
   // longer agree on them, so read the parameter list variable off the anchor.
-  const anchor = source.match(/\}\(([\w$]+)\);if\(typeof t==="string"&&t\.startsWith\("chatgpt-codex\/"\)\)/)
+  // The Fusion branch, when the other link added it, sits between the two.
+  const anchor = source.match(/\}\(([\w$]+)\);(?:if\(typeof t==="string"&&\/\^\(chatgpt-codex\|claude-subscription\)\\\/fusion\$\/\.test\(t\)\)\{[^}]*\})?if\(typeof t==="string"&&t\.startsWith\("chatgpt-codex\/"\)\)/)
     ?? source.match(/\}\(([\w$]+)\);if\(void 0===a\)return;if\(void 0!==i&&"openai_compatible"===[\w$]+\)/);
   if (!anchor) throw new Error('Reasoning effort anchor missing.');
   const params = anchor[1];
