@@ -8,7 +8,7 @@ import {infer, requireSubscription, prepareRequest} from './runner.mjs';
 import {pickerModels, providerModels} from './models.mjs';
 import {createCatalog} from './catalog.mjs';
 import {createUsage} from './usage.mjs';
-import {isFusionModel, handleFusion, fusionPickerModel, fusionProviderModel, localBridges, prefixes as fusionPrefixes} from './fusion.mjs';
+import {isFusionModel, handleFusion, forwardForeign, fusionPickerModel, fusionProviderModel, localBridges, prefixes as fusionPrefixes} from './fusion.mjs';
 
 export function createHandler({config, cwd:dir, getCatalog, getUsage,
   inferRequest=infer, readAccount=requireSubscription, report=()=>{}}) {
@@ -58,6 +58,7 @@ return async function handle(req,res) {
     // Fusion steps go to the scout or the builder, on this bridge or another;
     // those requests come back here and count against the limit themselves.
     if (isFusionModel(body?.model)) return await handleFusion(body,res);
+    if (await forwardForeign(body,res,fusionPrefixes.claude)) return;
     if (active>=2) return json(res,503,{error:{message:'Two Claude requests are already running. Please wait.'}});
     const catalog=await getCatalog();prepareRequest(body,catalog);
     const abort=new AbortController();res.on('close',()=>{if(!res.writableEnded)abort.abort();});
