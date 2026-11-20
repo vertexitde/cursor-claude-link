@@ -1,7 +1,7 @@
 import {maxModeVariant} from './max-mode.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {subscriptionEnvironment, contextEnvironment, prepareRequest as prepare} from './runner.mjs';
+import {subscriptionEnvironment, contextEnvironment, prepareRequest as prepare, toolName} from './runner.mjs';
 import {pickerModels, providerModels} from './models.mjs';
 import {sanitizeModels} from './catalog.mjs';
 import {formatPlan, parseReset, parseUsageWindows, zonedDateToEpoch} from './usage.mjs';
@@ -21,7 +21,14 @@ test('subscription environment removes API keys and third-party provider overrid
 test('conversation and tool results survive request preparation',()=>{
   const input=[{role:'user',content:'Add 19 and 23'}, {type:'function_call',call_id:'test-call',name:'add',arguments:'{"a":19,"b":23}'}, {type:'function_call_output',call_id:'test-call',output:'42'}];
   const value=prepareRequest({model:'claude-subscription/sonnet',input,tools:[{type:'function',name:'add',parameters:{type:'object'}}],tool_choice:{type:'function',name:'add'},parallel_tool_calls:false});
-  assert.deepEqual(JSON.parse(value.prompt).conversation,input);
+  const prompt=JSON.parse(value.prompt);
+  // Claude sees Cursor's tools as cursor_<name>, apart from Claude Code's own.
+  assert.deepEqual(prompt.conversation,input.map(item=>item.type==='function_call'?{...item,name:'cursor_add'}:item));
+  assert.deepEqual(prompt.availableTools.map(t=>t.name),['cursor_add']);
+  assert.deepEqual(prompt.toolChoice,{type:'function',name:'cursor_add'});
+  assert.deepEqual(value.schema.properties.tool_calls.items.properties.name.enum,['cursor_add']);
+  assert.equal(value.tools[0].name,'add');
+  assert.equal(toolName('cursor_Write'),'Write');
   assert.equal(value.schema.properties.tool_calls.minItems,1);
   assert.equal(value.schema.properties.tool_calls.maxItems,1);
 });
@@ -186,4 +193,20 @@ test('picker separates standard and extended limits while runtime retains provid
   assert.equal(model.contextTokenLimitForMaxMode,maximum);
   assert.equal(provider.find(p=>p.id===model.name).capabilities.context_length,maximum);
  }
+});
+
+test('native tool calls on Cursor tools become the answer', async () => {
+  const {nativeToolWatcher} = await import('./runner.mjs');
+  const watch = nativeToolWatcher([{name:'Write'}, {name:'Shell'}]);
+  const usage = {input_tokens:10, cache_read_input_tokens:5, cache_creation_input_tokens:0, output_tokens:3};
+  assert.equal(watch({type:'assistant', message:{id:'m1', content:[{type:'text', text:'Ich lege die Datei an.'}], usage}}), undefined);
+  assert.equal(watch({type:'assistant', message:{id:'m1', content:[{type:'tool_use', name:'Write', input:{path:'a.js', contents:'x'}}], usage}}), undefined);
+  assert.equal(watch({type:'assistant', message:{id:'m1', content:[{type:'tool_use', name:'cursor_Shell', input:{command:'node --check a.js'}}], usage}}), undefined);
+  const result = watch({type:'user', message:{content:[{type:'tool_result', is_error:true, content:'No such tool available'}]}});
+  assert.equal(result.structured_output.text, 'Ich lege die Datei an.');
+  assert.deepEqual(result.structured_output.tool_calls, [{name:'cursor_Write', arguments:'{"path":"a.js","contents":"x"}'}, {name:'cursor_Shell', arguments:'{"command":"node --check a.js"}'}]);
+  assert.equal(result.contextUsage.input_tokens, 10);
+  const other = nativeToolWatcher([{name:'Write'}]);
+  assert.equal(other({type:'assistant', message:{id:'m2', content:[{type:'tool_use', name:'StructuredOutput', input:{}}]}}), undefined);
+  assert.equal(other({type:'user', message:{content:[]}}), undefined, 'the structured output tool is left to the CLI');
 });
