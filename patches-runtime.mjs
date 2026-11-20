@@ -4,6 +4,7 @@
 // through scripts/install-remote.mjs, the copy under ~/.cursor-server on an
 // SSH host.
 import {patchSubagentSettingsRuntime} from './subagent-settings.mjs';
+import {patchFusionRuntime} from './fusion.mjs';
 import {patchSubagentModel} from './subagent-model.mjs';
 import {patchConversationActionsRuntime} from './conversation-actions.mjs';
 
@@ -25,5 +26,6 @@ export function patchRuntime(source) {
   const api = source.match(/([\w$]+)\.includes\("codex"\)(\|\|\1\.startsWith\("claude-subscription\/"\))?\?"responses":"chat_completions"/);
   if (!api) throw new Error('Local API type heuristic missing.');
   if (!api[2]) source = once(source, api[0], api[1] + '.includes("codex")||' + api[1] + '.startsWith("claude-subscription/")?"responses":"chat_completions"');
+  source = patchFusionRuntime(source, params);
   return patchConversationActionsRuntime(patchSubagentSettingsRuntime(patchSubagentModel(source)), prefix);
 }

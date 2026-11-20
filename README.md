@@ -79,6 +79,20 @@ Effort levels come from model metadata: Low, Medium, High, Very high and Max whe
 
 **Plan & Usage** contains a **Claude Subscription** card with the reported plan, usage percentages and reset times. It refreshes every minute while open. The bridge uses Claude Code's `/usage` command, with no model prompt, to retrieve these values. Errors appear as unavailable status rather than invented percentages.
 
+## Fusion
+
+**Fusion** appears in the ChatGPT Subscription and Claude Subscription sections when both links are installed (or alone, with the models of one). It has three settings in the picker:
+
+- **Scout**: a quick, cheap model (Haiku, Sonnet, Luna, Terra, Spark) that reads and explores.
+- **Builder**: any ChatGPT or Claude model; it edits, runs commands and answers.
+- **Context**: Full, or Condensed.
+
+Every agent step goes to the scout first. When it asks only for read-only tools (reading files, listing, searching), that answer goes back to Cursor. When it wants to change something, run anything else or answer you, its answer is discarded and the builder takes the same step. The step is sent to whichever local bridge serves the chosen model, so Haiku can scout for GPT-6.2-Astra. The default is Haiku scouting for the section's strongest model.
+
+With **Condensed**, the builder does not get the raw output of the scout's reads from the current turn: the scout summarises them once and the builder gets the summary. That saves the most tokens, and the builder can read a file again when it needs the exact text.
+
+What it saves: the many small reading steps of a task run on the cheap model. With Full, the builder still reads the whole conversation on its own steps, so the gain is largest on long explorations. Cursor's own Explore subagent setting is the other way to the same goal within one provider: the main model never sees the raw reads at all.
+
 ## Requirements
 
 - Windows x64 and a supported Cursor build.

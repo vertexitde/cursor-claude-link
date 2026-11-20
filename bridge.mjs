@@ -8,11 +8,28 @@ import {infer, requireSubscription, prepareRequest} from './runner.mjs';
 import {pickerModels, providerModels} from './models.mjs';
 import {createCatalog} from './catalog.mjs';
 import {createUsage} from './usage.mjs';
+import {isFusionModel, handleFusion, fusionPickerModel, fusionProviderModel, localBridges, prefixes as fusionPrefixes} from './fusion.mjs';
 
 export function createHandler({config, cwd:dir, getCatalog, getUsage,
   inferRequest=infer, readAccount=requireSubscription, report=()=>{}}) {
 const json = (res,status,body) => { res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(body)); };
 const id = prefix => prefix+'_'+crypto.randomUUID().replaceAll('-','');
+// The Claude models plus Fusion, whose Scout and Builder lists also offer the
+// ChatGPT models when cursor-gpt-link's bridge answers.
+let lastGptModels = [];
+const withFusion = async own => {
+  // The last list that arrived stands in while the other bridge is busy.
+  let others = lastGptModels;
+  const gpt = localBridges()[fusionPrefixes.chatgpt];
+  if (gpt) {
+    try {
+      const response = await fetch(gpt.base + '/picker-models?own=1', {headers:{authorization:'Bearer ' + gpt.key}, signal:AbortSignal.timeout(1500)});
+      if (response.ok) others = lastGptModels = (await response.json()).models ?? [];
+    } catch {}
+  }
+  const fusion = fusionPickerModel(fusionPrefixes.claude, [...own, ...others]);
+  return fusion ? [...own, fusion] : own;
+};
 let active = 0;
 
 return async function handle(req,res) {
@@ -22,19 +39,27 @@ return async function handle(req,res) {
     if (origin) {res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Vary','Origin');}
     if (req.method==='OPTIONS') {res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type');res.setHeader('Access-Control-Allow-Methods','GET, POST, OPTIONS');res.writeHead(204);return res.end();}
     if (req.headers.authorization!=='Bearer '+config.key) return json(res,401,{error:{message:'Bridge authentication required'}});
-    const pathname=new URL(req.url,'http://127.0.0.1').pathname;
+    const url=new URL(req.url,'http://127.0.0.1'),pathname=url.pathname;
     if (pathname==='/health') return json(res,200,{ok:true,provider:'claude-subscription',active});
-    if (pathname==='/picker-models') return json(res,200,{models:pickerModels(await getCatalog())});
-    if (pathname==='/v1/models') return json(res,200,{object:'list',data:providerModels(await getCatalog())});
+    if (pathname==='/picker-models') {
+      const own=pickerModels(await getCatalog());
+      if (url.searchParams.get('own')==='1') return json(res,200,{models:own});
+      return json(res,200,{models:await withFusion(own)});
+    }
+    if (pathname==='/v1/models') return json(res,200,{object:'list',data:[...providerModels(await getCatalog()),fusionProviderModel(fusionPrefixes.claude)]});
     if (pathname==='/account') return json(res,200,await readAccount(config.claude,{cwd:dir}));
     if (req.method==='GET'&&(pathname==='/usage'||pathname==='/v1/usage')) {
       try { return json(res,200,await getUsage()); }
       catch (error) { return json(res,502,{error:{message:error.message||'Usage data unavailable.'}}); }
     }
     if (req.method!=='POST'||pathname!=='/v1/responses') return json(res,404,{error:{message:'Unsupported route: '+req.method+' '+pathname}});
-    if (active>=2) return json(res,503,{error:{message:'Two Claude requests are already running. Please wait.'}});
     req.setEncoding('utf8');let text='';for await (const chunk of req) {text+=chunk;if(Buffer.byteLength(text)>64*1024*1024)throw new Error('Request exceeds the 64 MiB bridge limit. Send fewer or smaller attachments.');}
-    const body=JSON.parse(text),catalog=await getCatalog();prepareRequest(body,catalog);
+    const body=JSON.parse(text);
+    // Fusion steps go to the scout or the builder, on this bridge or another;
+    // those requests come back here and count against the limit themselves.
+    if (isFusionModel(body?.model)) return await handleFusion(body,res);
+    if (active>=2) return json(res,503,{error:{message:'Two Claude requests are already running. Please wait.'}});
+    const catalog=await getCatalog();prepareRequest(body,catalog);
     const abort=new AbortController();res.on('close',()=>{if(!res.writableEnded)abort.abort();});
     const response={id:id('resp'),object:'response',created_at:Math.floor(Date.now()/1000),model:body.model,status:'in_progress',output:[]};
     let sequence=0;
