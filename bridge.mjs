@@ -72,19 +72,52 @@ return async function handle(req,res) {
     const started=Date.now();
     const record=(status,usage)=>{try{report({id:response.id,model:body.model,status,durationMs:Date.now()-started,at:new Date().toISOString(),...(usage?{usage}: {})});}catch{}};
     record('started');
+    // Thinking and the reply stream while Claude writes them; the items open on
+    // their first delta and close once the answer is complete.
+    const output=[];
+    let reasoning,message,streamed='';
+    const openReasoning=()=>{
+      reasoning={item:{id:id('rs'),type:'reasoning',summary:[]},index:output.length,text:''};output.push(reasoning.item);
+      event('response.output_item.added',{output_index:reasoning.index,item:{...reasoning.item}});
+      event('response.reasoning_summary_part.added',{item_id:reasoning.item.id,output_index:reasoning.index,summary_index:0,part:{type:'summary_text',text:''}});
+    };
+    const closeReasoning=()=>{
+      if(!reasoning||reasoning.closed)return;reasoning.closed=true;
+      const part={type:'summary_text',text:reasoning.text};
+      event('response.reasoning_summary_text.done',{item_id:reasoning.item.id,output_index:reasoning.index,summary_index:0,text:reasoning.text});
+      event('response.reasoning_summary_part.done',{item_id:reasoning.item.id,output_index:reasoning.index,summary_index:0,part});
+      reasoning.item.summary=[part];
+      event('response.output_item.done',{output_index:reasoning.index,item:reasoning.item});
+    };
+    const openMessage=()=>{
+      closeReasoning();
+      message={item:{id:id('msg'),type:'message',role:'assistant',status:'in_progress',content:[]},index:output.length};output.push(message.item);
+      event('response.output_item.added',{output_index:message.index,item:{...message.item}});
+      event('response.content_part.added',{item_id:message.item.id,output_index:message.index,content_index:0,part:{type:'output_text',text:'',annotations:[]}});
+    };
+    const textDelta=delta=>{if(!message)openMessage();streamed+=delta;event('response.output_text.delta',{item_id:message.item.id,output_index:message.index,content_index:0,delta});};
+    const onProgress=({kind,delta})=>{
+      if(res.destroyed||!delta)return;
+      if(kind==='reasoning'){
+        if(message)return;
+        if(!reasoning)openReasoning();
+        reasoning.text+=delta;
+        event('response.reasoning_summary_text.delta',{item_id:reasoning.item.id,output_index:reasoning.index,summary_index:0,delta});
+      } else if(kind==='text') textDelta(delta);
+    };
     try {
-      const {answer,usage,usageDiagnostics}=await inferRequest(config.claude,body,{signal:abort.signal,cwd:dir,catalog});
-      const output=[];
-      if(answer.text){
-        const item={id:id('msg'),type:'message',role:'assistant',status:'in_progress',content:[]};
-        event('response.output_item.added',{output_index:0,item:{...item}});
-        event('response.content_part.added',{item_id:item.id,output_index:0,content_index:0,part:{type:'output_text',text:'',annotations:[]}});
-        event('response.output_text.delta',{item_id:item.id,output_index:0,content_index:0,delta:answer.text});
-        event('response.output_text.done',{item_id:item.id,output_index:0,content_index:0,text:answer.text});
+      const {answer,usage,usageDiagnostics}=await inferRequest(config.claude,body,{signal:abort.signal,cwd:dir,catalog,onProgress});
+      closeReasoning();
+      if(answer.text||message){
+        // What already streamed is the start of the answer; send the rest. A
+        // retried answer that differs keeps the final text in the done events.
+        if(answer.text.startsWith(streamed)&&answer.text.length>streamed.length)textDelta(answer.text.slice(streamed.length));
+        else if(!message)openMessage();
+        event('response.output_text.done',{item_id:message.item.id,output_index:message.index,content_index:0,text:answer.text});
         const part={type:'output_text',text:answer.text,annotations:[]};
-        event('response.content_part.done',{item_id:item.id,output_index:0,content_index:0,part});
-        item.content=[part];item.status='completed';output.push(item);
-        event('response.output_item.done',{output_index:0,item});
+        event('response.content_part.done',{item_id:message.item.id,output_index:message.index,content_index:0,part});
+        message.item.content=[part];message.item.status='completed';
+        event('response.output_item.done',{output_index:message.index,item:message.item});
       }
       for(const call of answer.tool_calls){
         const index=output.length,item={id:id('fc'),type:'function_call',call_id:id('call'),name:call.name,arguments:'',status:'in_progress'};

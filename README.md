@@ -81,6 +81,10 @@ Effort levels come from model metadata: Low, Medium, High, Very high and Max whe
 
 **Plan & Usage** contains a **Claude Subscription** card with the reported plan, usage percentages and reset times. It refreshes every minute while open. The bridge uses Claude Code's `/usage` command, with no model prompt, to retrieve these values. Errors appear as unavailable status rather than invented percentages.
 
+## Streaming
+
+The reply streams while Claude writes it: the bridge reads `claude -p` with partial messages and takes the reply out of the structured answer as it arrives, and thinking, when the model sends any, streams as reasoning. Tool calls follow once the answer is complete. This also holds in Remote-SSH windows, which reach the bridge through the reverse forward.
+
 ## Fusion
 
 **Fusion** appears in the ChatGPT Subscription and Claude Subscription sections when both links are installed (or alone, with the models of one). It has three settings in the picker:

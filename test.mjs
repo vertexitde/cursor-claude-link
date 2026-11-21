@@ -210,3 +210,22 @@ test('native tool calls on Cursor tools become the answer', async () => {
   assert.equal(other({type:'assistant', message:{id:'m2', content:[{type:'tool_use', name:'StructuredOutput', input:{}}]}}), undefined);
   assert.equal(other({type:'user', message:{content:[]}}), undefined, 'the structured output tool is left to the CLI');
 });
+
+test('the reply streams out of the partial StructuredOutput JSON', async () => {
+  const {partialText, progressWatcher} = await import('./runner.mjs');
+  assert.equal(partialText('{"text":"Hal'), 'Hal');
+  assert.equal(partialText(String.raw`{"text":"a\nb \"c\" \u00fc`), 'a\nb "c" \u00fc');
+  assert.equal(partialText('{"text":"x' + String.fromCharCode(92)), 'x', 'a split escape waits');
+  assert.equal(partialText('{"tool_calls":[],"text":"spät"}'), 'spät');
+  assert.equal(partialText(String.raw`{"tool_calls":[{"name":"cursor_Write","arguments":"{\"text\":\"no\"}"}]`), '', 'escaped keys inside arguments do not count');
+  const got = [];
+  const watch = progressWatcher(p => got.push(p));
+  const ev = event => watch({type:'stream_event', parent_tool_use_id:null, event});
+  ev({type:'message_start'});
+  ev({type:'content_block_start', index:0, content_block:{type:'thinking'}});
+  ev({type:'content_block_delta', index:0, delta:{type:'thinking_delta', thinking:'Hm.'}});
+  ev({type:'content_block_start', index:1, content_block:{type:'tool_use', name:'StructuredOutput'}});
+  for (const chunk of ['{"te', 'xt":"Hal', 'lo Welt', '","tool_calls":[]}']) ev({type:'content_block_delta', index:1, delta:{type:'input_json_delta', partial_json:chunk}});
+  watch({type:'stream_event', parent_tool_use_id:'sub', event:{type:'content_block_delta', index:1, delta:{type:'thinking_delta', thinking:'not mine'}}});
+  assert.deepEqual(got, [{kind:'reasoning', delta:'Hm.'}, {kind:'text', delta:'Hal'}, {kind:'text', delta:'lo Welt'}]);
+});
