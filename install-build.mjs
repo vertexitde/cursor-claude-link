@@ -9,7 +9,7 @@ import {patchSubagentModel} from './subagent-model.mjs';
 import {patchRuntime} from './patches-runtime.mjs';
 import {patchSubagentBubbles} from './subagent-bubbles.mjs';
 import {cursorRoot,linkedGptManifests,requireSupportedOriginals,symbolsFor} from './build-support.mjs';
-import {patchClaudeWorkbench} from './patches-workbench.mjs';
+import {patchClaudeWorkbench, patchClaudeUi, uiRelative} from './patches-workbench.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -94,6 +94,7 @@ const main=path.join(root,'out/main.js');
 pending.push({path:main,content:fs.readFileSync(main,'utf8')+buildAutostart({nodePath:process.execPath,bridgePath:path.join(dir,'bridge.mjs'),port:config.port})});
 product.checksums['vs/workbench/workbench.desktop.main.js']=crypto.createHash('sha256').update(pending[0].content).digest('base64').replace(/=+$/,'');
 pending.push({path:path.join(root,'product.json'),content:JSON.stringify(product,null,2)});
+if(symbols.ui){const target=path.join(root,uiRelative);pending.push({path:target,content:patchClaudeUi(fs.readFileSync(target,'utf8'),symbols.ui,{once,prelude})});}
 const backupDir=path.join(dir,'backups',String(Date.now()));fs.mkdirSync(backupDir,{recursive:true});
 for(const [i,file] of pending.entries()){
   if(file.path.endsWith('.js')){const candidate=path.join(backupDir,i+'.mjs');fs.writeFileSync(candidate,file.content);execFileSync(process.execPath,['--check',candidate],{windowsHide:true,stdio:'pipe'});fs.unlinkSync(candidate);}

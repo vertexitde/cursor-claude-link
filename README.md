@@ -9,7 +9,7 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Item | Current status |
 | --- | --- |
 | Client platform | Windows x64 |
-| Latest tested Cursor | 3.31.17, November 21, 2026; automated checks |
+| Latest tested Cursor | 3.32.1, November 24, 2026; automated checks |
 | Cursor commit | `61ea52f088708259885abd9a37eafec994cd5db0` |
 | Previously supported Cursor | 3.25.9, commit `5d4df965746c5d09740842fc0f1331ba1c157830`; 3.24.12, commit `37b865941ccb31e2fc90c685157534efca87f960`; 3.22.12, commit `3a92974361033b2051526321308c2740fe5912c0`; 3.22.9, commit `2ca0f45baa06796a86f6c6ba2b9bedacaf94c370`; 3.22.5, commit `a00aa8754ab5bae70b637d98e126f9dbd4e1e5d0`; 3.21.18, commit `c4730f7d93d787d9ab120af715999f0345ee5bc0`; 3.21.16, commit `8ae78e8eee1e63479c7e0504b664bc0a80c68000`; 3.21.13, commit `e44a49c17e334d442e58bbde931d791200f014a0`; 3.21.12, commit `05ddb9e824590e2c1db6bd2548dd71bf67ac9d20`; 3.21.9, commit `9998796a6096ce83d83a9332bfe7473b985db750`; 3.21.1, commit `74f717017ddcbf0554cd8c91ec7e2fb56983a070`; 3.20.23, commit `b23e0e2d3c0fc9bb9311f4390230a120ccc9aa50` |
 | Supported Cursor 3.20.11 | Commit `69d099d6568dc97e110ba8184614faf51c4040b0` |
@@ -25,6 +25,8 @@ Companion project: [cursor-gpt-link](https://github.com/vertexitde/cursor-gpt-li
 | Fast and Ultracode | Not implemented |
 
 Remote SSH sessions changed with 3.22.9. Until then a remote session kept the agent in Cursor's dedicated UI runtime so that the bridge, which listens on the client's loopback, stayed reachable. That runtime resolves paths with the client's own path module: on a Windows client against a Linux host, the workspace path `/srv/app` became `C:\\srv\\app`, and the runtime then looked there for `.cursor/rules`, ran `git rev-parse` in it, walked its ignore files up to the drive root and built the sandbox policy from it. From 3.22.9 the agent runs on the SSH host, where the workspace actually is, and the bridge is published on that host's loopback with an ssh reverse forward that `cursor-claude-link` writes into `~/.ssh/config`. See [Remote sessions](#remote-sessions).
+
+Cursor 3.32.1 split the workbench into ES modules. The model picker (its sections and grouping) and the Max-mode solver moved into `workbench.anysphere-ui.js`, a module both surfaces import, so that file is now patched as well: once, with the picker sections and the Max-mode branch, and with the same prelude as the surfaces. The settings pages were rebuilt from parts (`SettingsSection` and `SettingsRow`); the links draw their cards (subscription usage, the Inception key) through a small adapter onto those parts, so the same card code serves older builds. The run gate swapped its minified option names, which the extractor now reads instead of assuming. All automated checks pass on the original 3.32.1 build and on top of the companions, and 3.31.17 still verifies.
 
 Cursor 3.31.17 is a patch release of 3.31.12. Every patched bundle changed, but only minified names rotated: the symbols were re-derived without problems, and all automated checks pass on the original 3.31.17 build.
 

@@ -6,7 +6,8 @@
 // the logic once. The older installers stay as they were reviewed.
 import {patchPickerSections} from './picker-sections.mjs';
 import {usageSectionSrc} from './usage-section.mjs';
-import {patchMaxMode} from './max-mode.mjs';
+import {patchMaxMode, hasMaxModeSolver} from './max-mode.mjs';
+import {settingsParts} from './settings-compat.mjs';
 import {patchSubagentSettingsWorkbench} from './subagent-settings.mjs';
 import {patchSubagentBubbles} from './subagent-bubbles.mjs';
 import {patchSubagentLifecycle} from './subagent-lifecycle.mjs';
@@ -27,13 +28,23 @@ function providerModel(providerConfig) {
   return `${second}?.requestedModel?.modelId??${first}?.modelId`;
 }
 
+// From 3.32 the model picker and the Max-mode solver live in
+// workbench.anysphere-ui.js, a module both surfaces import. It gets the same
+// prelude (the bridge constants feed the usage label).
+export const uiRelative = 'out/vs/workbench/workbench.anysphere-ui.js';
+export function patchClaudeUi(source, ui, {once, prelude}) {
+  if (source.includes('const __claudeBridgeBase=')) throw new Error('Claude patch marker already present in the UI module.');
+  return patchMaxMode(patchPickerSections(prelude + source, once, ui));
+}
+
 export function patchClaudeWorkbench(source, surface, s, {once, prelude}) {
   if (!['desktop', 'glass'].includes(surface)) throw new Error('Unknown workbench surface: ' + surface);
   // The declaration, not the name: a companion's picker section mentions this
   // constant defensively when it renders the usage label.
   if (source.includes('const __claudeBridgeBase=')) throw new Error('Claude patch marker already present.');
   source = prelude + source;
-  source = patchPickerSections(source, once, s);
+  // From 3.32 the picker is in workbench.anysphere-ui.js (patchClaudeUi).
+  if (s.groupReturn) source = patchPickerSections(source, once, s);
   source = once(source, 'async refreshDefaultModels(){', 'async refreshDefaultModels(){await __refreshClaudeBridgeModels();');
   const getter = source.includes('return __withChatgptBridgeModels([...this._availableDefaultModels()])')
     ? 'getAvailableDefaultModels(){return __withChatgptBridgeModels([...this._availableDefaultModels()])}'
@@ -63,12 +74,14 @@ export function patchClaudeWorkbench(source, surface, s, {once, prelude}) {
   // where the workspace actually lives, and reaches the bridge through the ssh
   // reverse forward.
 
-  const usage = {jsx:s.usageJsx, useState:s.usageUseState, useEffect:s.usageUseEffect, card:s.card, zs:s.zs, bar:s.bar, barStyle:s.barStyle};
+  const parts = settingsParts('claude', s.usageJsx, s);
+  const usage = {jsx:s.usageJsx, useState:s.usageUseState, useEffect:s.usageUseEffect, card:parts.card, zs:parts.zs, bar:s.bar, barStyle:s.barStyle};
   const childrenGpt = s.usageChildren.slice(0, -1) + ',' + s.usageJsx + '(__chatgptUsageSection,{})]';
-  source = once(source, s.usageFn, usageSectionSrc(usage) + s.usageFn);
+  source = once(source, s.usageFn, parts.adapter + usageSectionSrc(usage) + s.usageFn);
   const usageChildren = source.includes(childrenGpt) ? childrenGpt : s.usageChildren;
   source = once(source, usageChildren, usageChildren.slice(0, -1) + ',' + s.usageJsx + '(__claudeUsageSection,{})]');
-  source = patchMaxMode(patchSubagentSettingsWorkbench(source));
+  source = patchSubagentSettingsWorkbench(source);
+  if (hasMaxModeSolver(source)) source = patchMaxMode(source);
   source = patchSubagentBubbles(source, surface, s);
   source = patchSubagentLifecycle(source, surface, prefix, s);
   return patchAgentHost(patchConversationActionsWorkbench(source, surface, prefix));
