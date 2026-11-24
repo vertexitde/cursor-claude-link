@@ -8,7 +8,7 @@ import {infer, requireSubscription, prepareRequest} from './runner.mjs';
 import {pickerModels, providerModels} from './models.mjs';
 import {createCatalog} from './catalog.mjs';
 import {createUsage} from './usage.mjs';
-import {isFusionModel, handleFusion, forwardForeign, fusionPickerModel, fusionProviderModel, localBridges, prefixes as fusionPrefixes} from './fusion.mjs';
+import {isFusionModel, handleFusion, forwardForeign, fusionLog, fusionPickerModel, fusionProviderModel, localBridges, prefixes as fusionPrefixes} from './fusion.mjs';
 
 export function createHandler({config, cwd:dir, getCatalog, getUsage,
   inferRequest=infer, readAccount=requireSubscription, report=()=>{}}) {
@@ -139,7 +139,7 @@ return async function handle(req,res) {
         res.end();
       }
     } finally {active--;clearInterval(timer);}
-  }catch(error){if(res.headersSent)res.destroy();else json(res,400,{error:{message:error.message}});}
+  }catch(error){fusionLog('claude  request failed: '+(error?.message??error));if(res.headersSent)res.destroy();else json(res,400,{error:{message:error.message}});}
 };
 }
 
