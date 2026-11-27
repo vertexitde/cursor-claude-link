@@ -4,6 +4,7 @@
 
 | Version | Commit | Platform |
 | --- | --- | --- |
+| 3.32.11 | `79af92cc6796bb44603d7c96f7c88e4f3edafcb0` | Windows x64 |
 | 3.32.7 | `c83fdd301426f2280908a553e0782475a1db4af0` | Windows x64 |
 | 3.32.5 | `94cda5961505b3ddb751f861e6eb5f2e65379db0` | Windows x64 |
 | 3.32.4 | `0925c4b8226c56947c43f0b555fb98e187a7e020` | Windows x64 |
@@ -71,6 +72,10 @@ Verified without touching an installation, against copies of the original 3.22.9
 - a dry run on a copy of a real configuration, with `ssh -G` used to confirm that OpenSSH parses the result, attaches the three forwards to a configured host and leaves an unrelated host without any.
 
 Not yet confirmed: a live remote turn. The host's own runtime under `~/.cursor-server` is unpatched, so reasoning effort forwarding and the subagent model repairs are missing there.
+
+## Cursor 3.32.11 update
+
+Cursor 3.32.11 is a patch release of 3.32.7. Every patched bundle changed, but only minified names rotated: the symbols were re-derived without problems (the extractor reproduces the reviewed 3.32.7 symbols), and all automated checks pass on the original 3.32.11 build and on top of the companions.
 
 ## Cursor 3.32.7 update
 
